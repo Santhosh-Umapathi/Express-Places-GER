@@ -1,7 +1,8 @@
 const express = require("express");
-
 const placesRoutes = express.Router();
-
+//Models
+const HttpError = require("../models/http-error");
+//Data
 const DUMMY_PLACES = [
   {
     id: "p1",
@@ -21,8 +22,8 @@ placesRoutes.get("/:pid", (req, res, next) => {
   const placeId = req.params.pid;
   const place = DUMMY_PLACES.find((p) => p.id === placeId);
   if (!place) {
-    const error = new Error("No Results found for the places id");
-    error.code = 404;
+    const error = new HttpError("No Results found for the places id", 404);
+    // error.code = 404;
     return next(error); //Sending to global error boundary
 
     // return res.status(404).json({ message: "No Results found" });
@@ -36,11 +37,9 @@ placesRoutes.get("/users/:uid", (req, res, next) => {
   const place = DUMMY_PLACES.find((p) => p.creator === userId);
 
   if (!place) {
-    const error = new Error("No Results found for the user Id");
-    error.code = 404;
-
-    return next(error);
-    // return res.status(404).json({ message: "No Results found" });
+    // const error = new Error("No Results found for the user Id");
+    // error.code = 404;
+    return next(new HttpError("No Results found for the user Id", 404));
   }
 
   res.json({ message: "GET Success", place });
