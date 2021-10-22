@@ -8,9 +8,15 @@ const app = express();
 const PORT = 5000;
 
 //Places Routes
-app.use(placesRoutes);
+app.use("/api/places", placesRoutes);
 //User Routes
-app.use(userRoutes);
+app.use("/api/users", userRoutes);
+
+//Error Boundary
+app.use((error, req, res, next) => {
+  res.status(error.code || 500);
+  res.json({ message: error.message || "Unknown error occured" });
+});
 
 app.listen(PORT);
 console.log("Listening to PORT:", PORT);
