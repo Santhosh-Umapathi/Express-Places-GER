@@ -1,22 +1,13 @@
 const express = require("express");
-
 const userRoutes = express.Router();
 
-const DUMMY_USERS = [
-  {
-    id: "u1",
-    name: "Jack",
-    email: "jack@jack.com",
-  },
-];
+//Controllers
+const { getUsers, login, signUp } = require("../controllers/users-controller");
 
-userRoutes.get("/:uid", (req, res, next) => {
-  //:pid is dynamic param
-  const userId = req.params.uid;
-  const user = DUMMY_USERS.find((u) => u.id === userId);
+userRoutes.get("/", getUsers);
 
-  // console.log("[GET]: places-routes");
-  res.json({ message: "GET Success", user });
-});
+userRoutes.post("/signup", signUp);
+
+userRoutes.post("/login", login);
 
 module.exports = userRoutes;
