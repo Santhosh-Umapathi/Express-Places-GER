@@ -17,12 +17,12 @@ let DUMMY_USERS = [
 //Validations
 const signUpValidator = [
   check("name").not().isEmpty(),
-  check("email").not().isEmpty().isEmail(),
+  check("email").not().isEmpty().normalizeEmail().isEmail(),
   check("password").isLength({ min: 6 }),
 ];
 
 const loginUpValidator = [
-  check("email").not().isEmpty().isEmail(),
+  check("email").not().isEmpty().normalizeEmail().isEmail(),
   check("password").isLength({ min: 6 }),
 ];
 
