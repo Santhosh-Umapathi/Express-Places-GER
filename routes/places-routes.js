@@ -8,15 +8,17 @@ const {
   createPlace,
   updatePlace,
   deletePlace,
+  createPlaceValidator,
+  updatePlaceValidator,
 } = require("../controllers/places-controller");
 
 placesRoutes.get("/:pid", getPlacesById);
 
 placesRoutes.get("/users/:uid", getPlacesByUserId);
 
-placesRoutes.post("/", createPlace);
+placesRoutes.post("/", createPlaceValidator, createPlace);
 
-placesRoutes.patch("/:pid", updatePlace);
+placesRoutes.patch("/:pid", updatePlaceValidator, updatePlace);
 
 placesRoutes.delete("/:pid", deletePlace);
 

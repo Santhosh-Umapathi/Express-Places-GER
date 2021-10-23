@@ -1,4 +1,6 @@
 const uuid = require("uuid").v4;
+const { check, validationResult } = require("express-validator");
+
 //Models
 const HttpError = require("../models/http-error");
 
@@ -17,6 +19,28 @@ let DUMMY_PLACES = [
   },
 ];
 
+//Validations
+const createPlaceValidator = [
+  check("title").not().isEmpty(),
+  check("address").not().isEmpty(),
+  check("description").isLength({ min: 5 }),
+];
+
+const updatePlaceValidator = [
+  check("title").not().isEmpty(),
+  check("description").isLength({ min: 5 }),
+];
+
+const validationHandler = (req, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    // console.log("🚀 --- createPlace --- errors", errors);
+    const error = new HttpError("Enter valid inputs, please check your data");
+    return next(error);
+  }
+};
+
+//Controllers
 const getPlacesById = (req, res, next) => {
   //:pid is dynamic param
   const placeId = req.params.pid;
@@ -46,6 +70,9 @@ const getPlacesByUserId = (req, res, next) => {
 };
 
 const createPlace = (req, res, next) => {
+  //Validation Check
+  validationHandler(req, next);
+
   const { title, description, coordinates, address, creator } = req.body;
 
   const place = {
@@ -63,6 +90,9 @@ const createPlace = (req, res, next) => {
 };
 
 const updatePlace = (req, res, next) => {
+  //Validation Check
+  validationHandler(req, next);
+
   const placeId = req.params.pid;
   const { title, description } = req.body;
 
@@ -84,8 +114,12 @@ const deletePlace = (req, res, next) => {
   res.status(201).json({ message: "DELETE Success" });
 };
 
+//Module const exports
 exports.getPlacesById = getPlacesById;
 exports.getPlacesByUserId = getPlacesByUserId;
 exports.createPlace = createPlace;
 exports.updatePlace = updatePlace;
 exports.deletePlace = deletePlace;
+//Validations Exports
+exports.createPlaceValidator = createPlaceValidator;
+exports.updatePlaceValidator = updatePlaceValidator;
