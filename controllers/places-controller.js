@@ -3,7 +3,7 @@ const uuid = require("uuid").v4;
 const HttpError = require("../models/http-error");
 
 //Data
-const DUMMY_PLACES = [
+let DUMMY_PLACES = [
   {
     id: "p1",
     title: "Empire State Building",
@@ -34,15 +34,15 @@ const getPlacesById = (req, res, next) => {
 
 const getPlacesByUserId = (req, res, next) => {
   const userId = req.params.uid;
-  const place = DUMMY_PLACES.find((p) => p.creator === userId);
+  const places = DUMMY_PLACES.filter((p) => p.creator === userId);
 
-  if (!place) {
+  if (!places) {
     // const error = new Error("No Results found for the user Id");
     // error.code = 404;
     return next(new HttpError("No Results found for the user Id", 404));
   }
 
-  res.json({ message: "GET Success", place });
+  res.json({ message: "GET Success", places });
 };
 
 const createPlace = (req, res, next) => {
@@ -62,6 +62,30 @@ const createPlace = (req, res, next) => {
   res.status(201).json({ message: "POST Success", place });
 };
 
+const updatePlace = (req, res, next) => {
+  const placeId = req.params.pid;
+  const { title, description } = req.body;
+
+  const updatedPlace = { ...DUMMY_PLACES.find((p) => p.id === placeId) };
+  updatedPlace.title = title;
+  updatedPlace.description = description;
+
+  const updatedPlaceIndex = DUMMY_PLACES.findIndex((p) => p.id === placeId);
+  DUMMY_PLACES[updatedPlaceIndex] = updatedPlace;
+
+  res.status(201).json({ message: "Update Success", updatedPlace });
+};
+
+const deletePlace = (req, res, next) => {
+  const placeId = req.params.pid;
+
+  DUMMY_PLACES = DUMMY_PLACES.filter((p) => p.id !== placeId);
+
+  res.status(201).json({ message: "DELETE Success" });
+};
+
 exports.getPlacesById = getPlacesById;
 exports.getPlacesByUserId = getPlacesByUserId;
 exports.createPlace = createPlace;
+exports.updatePlace = updatePlace;
+exports.deletePlace = deletePlace;
