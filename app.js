@@ -1,4 +1,5 @@
 const express = require("express");
+require("dotenv").config();
 //Models
 const HttpError = require("./models/http-error");
 
@@ -7,6 +8,7 @@ const placesRoutes = require("./routes/places-routes");
 const userRoutes = require("./routes/users-routes");
 
 const app = express();
+
 const jsonParser = express.json();
 const PORT = 5000;
 

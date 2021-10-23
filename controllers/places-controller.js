@@ -4,6 +4,9 @@ const { check, validationResult } = require("express-validator");
 //Models
 const HttpError = require("../models/http-error");
 
+//Utils
+const { getCoordsForAddress } = require("../utils/location");
+
 //Data
 let DUMMY_PLACES = [
   {
@@ -31,12 +34,12 @@ const updatePlaceValidator = [
   check("description").isLength({ min: 5 }),
 ];
 
-const validationHandler = (req, next) => {
+const validationHandler = (req) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     // console.log("🚀 --- createPlace --- errors", errors);
     const error = new HttpError("Enter valid inputs, please check your data");
-    return next(error);
+    throw error;
   }
 };
 
@@ -69,11 +72,22 @@ const getPlacesByUserId = (req, res, next) => {
   res.json({ message: "GET Success", places });
 };
 
-const createPlace = (req, res, next) => {
+const createPlace = async (req, res, next) => {
   //Validation Check
-  validationHandler(req, next);
+  validationHandler(req);
 
-  const { title, description, coordinates, address, creator } = req.body;
+  const { title, description, address, creator } = req.body;
+
+  let coordinates = {};
+  try {
+    const results = await getCoordsForAddress(address);
+
+    coordinates.lng = results.features[0].geometry.coordinates[0];
+    coordinates.lat = results.features[0].geometry.coordinates[1];
+  } catch (error) {
+    // console.log("🚀 --- createPlace --- error", error);
+    return next(new HttpError("Address not found", 422));
+  }
 
   const place = {
     id: uuid(),
@@ -91,7 +105,11 @@ const createPlace = (req, res, next) => {
 
 const updatePlace = (req, res, next) => {
   //Validation Check
-  validationHandler(req, next);
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    const error = new HttpError("Enter valid inputs, please check your data");
+    return next(error);
+  }
 
   const placeId = req.params.pid;
   const { title, description } = req.body;
