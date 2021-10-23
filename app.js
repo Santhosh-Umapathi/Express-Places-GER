@@ -1,11 +1,15 @@
 const express = require("express");
-const bodyParser = require("body-parser");
+const jsonParser = express.json();
+
 //Routes
 const placesRoutes = require("./routes/places-routes");
 const userRoutes = require("./routes/users-routes");
 
 const app = express();
 const PORT = 5000;
+
+//Parse all JSON
+app.use(jsonParser);
 
 //Places Routes
 app.use("/api/places", placesRoutes);
