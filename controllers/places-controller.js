@@ -1,4 +1,3 @@
-const uuid = require("uuid").v4;
 const { check, validationResult } = require("express-validator");
 
 //Models
@@ -6,21 +5,6 @@ const { HttpError, Place } = require("../models");
 
 //Utils
 const { getCoordsForAddress } = require("../utils/location");
-
-//Data
-let DUMMY_PLACES = [
-  {
-    id: "p1",
-    title: "Empire State Building",
-    description: "One of the popular skyscrappers in the world",
-    location: {
-      lat: 40.7484474,
-      lng: -73.9871516,
-    },
-    address: "20 W 34th st New York, NY 10001",
-    creator: "u1",
-  },
-];
 
 //Validations
 const createPlaceValidator = [
@@ -133,7 +117,7 @@ const createPlace = async (req, res, next) => {
   res.status(201).json({ message: "POST Success", place: createdPlace });
 };
 
-const updatePlace = (req, res, next) => {
+const updatePlace = async (req, res, next) => {
   //Validation Check
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -144,30 +128,81 @@ const updatePlace = (req, res, next) => {
   const placeId = req.params.pid;
   const { title, description } = req.body;
 
-  const updatedPlace = { ...DUMMY_PLACES.find((p) => p.id === placeId) };
-  updatedPlace.title = title;
-  updatedPlace.description = description;
+  let place;
+  try {
+    place = await Place.findById(placeId);
 
-  const updatedPlaceIndex = DUMMY_PLACES.findIndex((p) => p.id === placeId);
-  DUMMY_PLACES[updatedPlaceIndex] = updatedPlace;
+    if (!place) {
+      const error = new HttpError("No Results found for the places id", 404);
+      return next(error);
+    }
+    place.title = title;
+    place.description = description;
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong while fetching the place",
+      422
+    );
+    return next(error);
+  }
 
-  res.status(201).json({ message: "Update Success", updatedPlace });
+  try {
+    await place.save();
+    place = place.toObject({ getters: true }); //Convert mongoose object to js object and add "id" to it
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong while saving updated place",
+      422
+    );
+    return next(error);
+  }
+
+  res.status(201).json({ message: "Update Success", place });
 };
 
-const deletePlace = (req, res, next) => {
+const deletePlace = async (req, res, next) => {
   const placeId = req.params.pid;
 
-  DUMMY_PLACES = DUMMY_PLACES.filter((p) => p.id !== placeId);
+  let place;
+  try {
+    place = await Place.findById(placeId);
+    if (!place) {
+      const error = new HttpError("No Results found for the places id", 404);
+      return next(error);
+    }
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong while fetching the place",
+      422
+    );
+    return next(error);
+  }
+
+  try {
+    await place.remove();
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong while deleting place",
+      422
+    );
+    return next(error);
+  }
 
   res.status(201).json({ message: "DELETE Success" });
 };
 
 //Module const exports
-exports.getPlacesById = getPlacesById;
-exports.getPlacesByUserId = getPlacesByUserId;
-exports.createPlace = createPlace;
-exports.updatePlace = updatePlace;
-exports.deletePlace = deletePlace;
-//Validations Exports
-exports.createPlaceValidator = createPlaceValidator;
-exports.updatePlaceValidator = updatePlaceValidator;
+module.exports = {
+  getPlacesById,
+  getPlacesByUserId,
+  createPlace,
+  updatePlace,
+  deletePlace,
+  /* Validations Exports */
+  createPlaceValidator,
+  updatePlaceValidator,
+};
+
+// Alternative
+// exports.getPlacesById = getPlacesById;
+// exports.getPlacesByUserId = getPlacesByUserId;
