@@ -1,18 +1,7 @@
-const uuid = require("uuid").v4;
 const { check, validationResult } = require("express-validator");
 
 //Models
-const HttpError = require("../models/http-error");
-
-//Data
-let DUMMY_USERS = [
-  {
-    id: "u1",
-    name: "max",
-    email: "test@test.com",
-    password: "Test@123",
-  },
-];
+const { HttpError, User } = require("../models");
 
 //Validations
 const signUpValidator = [
@@ -38,29 +27,47 @@ const getUsers = (req, res, next) => {
   res.json({ message: "GET Success", users: DUMMY_USERS });
 };
 
-const signUp = (req, res, next) => {
+const signUp = async (req, res, next) => {
   //Validation Check
-  validationHandler(req, next);
-
-  const { name, email, password } = req.body;
-
-  const foundUser = DUMMY_USERS.find((u) => u.email === email);
-
-  if (foundUser) {
-    const error = new HttpError("User already signed Up", 401);
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    const error = new HttpError("Enter valid inputs, please check your data");
     return next(error);
   }
 
-  const newUser = {
-    id: uuid(),
-    name,
-    email,
-    password,
-  };
+  const { name, email, password, places } = req.body;
 
-  DUMMY_USERS.push(newUser);
+  let newUser;
+  try {
+    newUser = await User.findOne({ email });
 
-  res.status(201).json({ message: "POST Success", newUser });
+    if (newUser) {
+      const error = new HttpError("User already signed Up", 401);
+      return next(error);
+    }
+  } catch (err) {
+    const error = new HttpError("Failed to fetch user", 401);
+    return next(error);
+  }
+
+  try {
+    newUser = new User({
+      name,
+      email,
+      password,
+      places,
+      image:
+        "https://www.pngkey.com/png/detail/114-1149878_setting-user-avatar-in-specific-size-without-breaking.png",
+    });
+
+    await newUser.save();
+    newUser = newUser.toObject({ getters: true });
+  } catch (err) {
+    const error = new HttpError("Signup failed", 401);
+    return next(error);
+  }
+
+  res.status(201).json({ message: "Signup Success", newUser });
 };
 
 const login = (req, res, next) => {
@@ -82,9 +89,11 @@ const login = (req, res, next) => {
 };
 
 //Module const exports
-exports.getUsers = getUsers;
-exports.signUp = signUp;
-exports.login = login;
-//Validations Exports
-exports.signUpValidator = signUpValidator;
-exports.loginUpValidator = loginUpValidator;
+module.exports = {
+  getUsers,
+  signUp,
+  login,
+  //Validations Exports
+  signUpValidator,
+  loginUpValidator,
+};
