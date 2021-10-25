@@ -17,6 +17,18 @@ const url = `mongodb+srv://${process.env.MONGO_USER_NAME}:${process.env.MONGO_PA
 //Parse all JSON
 app.use(jsonParser);
 
+//Allowing CORS for localhost development
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*"); //'*' is any domain or 'http://localhost:3000'
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE");
+
+  next();
+});
+
 //Places Routes
 app.use("/api/places", placesRoutes);
 //User Routes
