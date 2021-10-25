@@ -48,7 +48,7 @@ const signUp = async (req, res, next) => {
   const error = validationHandler(req);
   error && next(error);
 
-  const { name, email, password, places } = req.body;
+  const { name, email, password } = req.body;
 
   let newUser;
   try {
@@ -68,7 +68,7 @@ const signUp = async (req, res, next) => {
       name,
       email,
       password,
-      places,
+      places: [],
       image:
         "https://www.pngkey.com/png/detail/114-1149878_setting-user-avatar-in-specific-size-without-breaking.png",
     });

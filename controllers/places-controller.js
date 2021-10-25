@@ -1,7 +1,8 @@
 const { check, validationResult } = require("express-validator");
+const mongoose = require("mongoose");
 
 //Models
-const { HttpError, Place } = require("../models");
+const { HttpError, Place, User } = require("../models");
 
 //Utils
 const { getCoordsForAddress } = require("../utils/location");
@@ -102,6 +103,20 @@ const createPlace = async (req, res, next) => {
     return next(new HttpError("Address not found", 422));
   }
 
+  //Check if user exists
+  let user;
+  try {
+    user = await User.findById(creator);
+
+    if (!user) {
+      const error = new HttpError("User not found", 422);
+      return next(error);
+    }
+  } catch (err) {
+    const error = new HttpError("Error fetching the user", 422);
+    return next(error);
+  }
+
   let createdPlace;
   try {
     createdPlace = new Place({
@@ -110,12 +125,17 @@ const createPlace = async (req, res, next) => {
       location: coordinates,
       address,
       image: "https://miro.medium.com/max/900/1*b0TtGI6gWFLltL1QkRxVdg.png",
-      creator,
+      creator, //: user.id,
     });
 
-    await createdPlace.save();
+    //Multiple transactions, Success only if all completes or reverts back.
+    const session = await mongoose.startSession();
+    await session.startTransaction();
+    await createdPlace.save({ session });
+    user.places.push(createdPlace); //only takes the id, because of schema
+    await user.save({ session });
+    await session.commitTransaction(); //Save here if all is success.
   } catch (err) {
-    console.log("🚀 --- createPlace --- err", err);
     const error = new HttpError("Error creating a new place, try again", 422);
     return next(error);
   }
