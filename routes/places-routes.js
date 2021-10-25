@@ -12,11 +12,14 @@ const {
   updatePlaceValidator,
 } = require("../controllers/places-controller");
 
+//Middlewares
+const { fileUpload } = require("../middlewares");
+
 placesRoutes.get("/:pid", getPlacesById);
 
 placesRoutes.get("/users/:uid", getPlacesByUserId);
 
-placesRoutes.post("/", createPlaceValidator, createPlace);
+placesRoutes.post("/", fileUpload, createPlaceValidator, createPlace);
 
 placesRoutes.patch("/:pid", updatePlaceValidator, updatePlace);
 

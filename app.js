@@ -1,5 +1,8 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const fs = require("fs");
+const path = require("path");
+
 require("dotenv").config();
 //Models
 const { HttpError } = require("./models");
@@ -29,6 +32,9 @@ app.use((req, res, next) => {
   next();
 });
 
+//Allowing Static files exports - Images
+app.use("/uploads/images", express.static(path.join("uploads", "images")));
+
 //Places Routes
 app.use("/api/places", placesRoutes);
 //User Routes
@@ -42,6 +48,13 @@ app.use((req, res, next) => {
 
 //Error Boundary
 app.use((error, req, res, next) => {
+  //Removing image from storage if its request failed on other fields
+  if (req.file) {
+    fs.unlink(req.file.path, (err) => {
+      console.log("Unlinking image failed", err);
+    });
+  }
+
   res.status(error.code || 500);
   res.json({ message: error.message || "Unknown error occured" });
 });

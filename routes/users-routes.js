@@ -10,9 +10,12 @@ const {
   signUpValidator,
 } = require("../controllers/users-controller");
 
+//Middlewares
+const { fileUpload } = require("../middlewares");
+
 userRoutes.get("/", getUsers);
 
-userRoutes.post("/signup", signUpValidator, signUp);
+userRoutes.post("/signup", fileUpload, signUpValidator, signUp);
 
 userRoutes.post("/login", loginUpValidator, login);
 

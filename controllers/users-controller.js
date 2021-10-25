@@ -69,8 +69,7 @@ const signUp = async (req, res, next) => {
       email,
       password,
       places: [],
-      image:
-        "https://www.pngkey.com/png/detail/114-1149878_setting-user-avatar-in-specific-size-without-breaking.png",
+      image: process.env.BACKEND_URL + req.file.path,
     });
 
     await newUser.save();

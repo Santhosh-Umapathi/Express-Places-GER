@@ -1,5 +1,6 @@
 const { check, validationResult } = require("express-validator");
 const mongoose = require("mongoose");
+const fs = require("fs");
 
 //Models
 const { HttpError, Place, User } = require("../models");
@@ -146,7 +147,7 @@ const createPlace = async (req, res, next) => {
       description,
       location: coordinates,
       address,
-      image: "https://miro.medium.com/max/900/1*b0TtGI6gWFLltL1QkRxVdg.png",
+      image: process.env.BACKEND_URL + req.file.path,
       creator, //: user.id,
     });
 
@@ -223,6 +224,8 @@ const deletePlace = async (req, res, next) => {
     return next(error);
   }
 
+  let image = place.image.split(process.env.BACKEND_URL).pop();
+
   try {
     const session = await mongoose.startSession();
     await session.startTransaction();
@@ -237,6 +240,9 @@ const deletePlace = async (req, res, next) => {
     );
     return next(error);
   }
+
+  //Deleting Image from the server
+  fs.unlink(image, (err) => console.log("Image Deletion failed"));
 
   res.status(201).json({ message: "DELETE Success" });
 };
