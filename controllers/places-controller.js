@@ -6,7 +6,9 @@ const { HttpError, Place } = require("../models");
 //Utils
 const { getCoordsForAddress } = require("../utils/location");
 
-//Validations
+//------------------------------------------------------------------
+//MARK: Validations
+//------------------------------------------------------------------
 const createPlaceValidator = [
   check("title").not().isEmpty(),
   check("address").not().isEmpty(),
@@ -18,16 +20,19 @@ const updatePlaceValidator = [
   check("description").isLength({ min: 5 }),
 ];
 
-const validationHandler = (req) => {
+const validationHandler = (req, next) => {
   const errors = validationResult(req);
+
+  let error;
   if (!errors.isEmpty()) {
-    // console.log("🚀 --- createPlace --- errors", errors);
-    const error = new HttpError("Enter valid inputs, please check your data");
-    throw error;
+    error = new HttpError("Enter valid inputs, please check your data");
   }
+  return error;
 };
 
-//Controllers
+//------------------------------------------------------------------
+//MARK: Controllers
+//------------------------------------------------------------------
 const getPlacesById = async (req, res, next) => {
   //:pid is dynamic param
   const placeId = req.params.pid;
@@ -81,7 +86,8 @@ const getPlacesByUserId = async (req, res, next) => {
 
 const createPlace = async (req, res, next) => {
   //Validation Check
-  validationHandler(req);
+  const error = validationHandler(req);
+  error && next(error);
 
   const { title, description, address, creator } = req.body;
 
@@ -119,11 +125,8 @@ const createPlace = async (req, res, next) => {
 
 const updatePlace = async (req, res, next) => {
   //Validation Check
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    const error = new HttpError("Enter valid inputs, please check your data");
-    return next(error);
-  }
+  const error = validationHandler(req);
+  error && next(error);
 
   const placeId = req.params.pid;
   const { title, description } = req.body;
@@ -191,7 +194,9 @@ const deletePlace = async (req, res, next) => {
   res.status(201).json({ message: "DELETE Success" });
 };
 
-//Module const exports
+//------------------------------------------------------------------
+//MARK: Exports
+//------------------------------------------------------------------
 module.exports = {
   getPlacesById,
   getPlacesByUserId,

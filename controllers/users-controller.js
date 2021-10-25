@@ -17,10 +17,12 @@ const loginUpValidator = [
 
 const validationHandler = (req, next) => {
   const errors = validationResult(req);
+
+  let error;
   if (!errors.isEmpty()) {
-    const error = new HttpError("Enter valid inputs, please check your data");
-    throw error;
+    error = new HttpError("Enter valid inputs, please check your data");
   }
+  return error;
 };
 
 const getUsers = (req, res, next) => {
@@ -29,11 +31,8 @@ const getUsers = (req, res, next) => {
 
 const signUp = async (req, res, next) => {
   //Validation Check
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    const error = new HttpError("Enter valid inputs, please check your data");
-    return next(error);
-  }
+  const error = validationHandler(req);
+  error && next(error);
 
   const { name, email, password, places } = req.body;
 
@@ -70,18 +69,23 @@ const signUp = async (req, res, next) => {
   res.status(201).json({ message: "Signup Success", newUser });
 };
 
-const login = (req, res, next) => {
+const login = async (req, res, next) => {
   //Validation Check
-  validationHandler(req, next);
+  const error = validationHandler(req);
+  error && next(error);
 
   const { email, password } = req.body;
 
-  const foundUser = DUMMY_USERS.find(
-    (u) => u.email === email && u.password === password
-  );
+  let user;
+  try {
+    user = await User.findOne({ email });
 
-  if (!foundUser) {
-    const error = new HttpError("User not found or incorrect credentials", 401);
+    if (!user || user.password !== password) {
+      const error = new HttpError("Invalid Credentials or User not found", 401);
+      return next(error);
+    }
+  } catch (err) {
+    const error = new HttpError("Failed to fetch user", 401);
     return next(error);
   }
 
