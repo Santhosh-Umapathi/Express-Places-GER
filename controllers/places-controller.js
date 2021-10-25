@@ -2,7 +2,7 @@ const uuid = require("uuid").v4;
 const { check, validationResult } = require("express-validator");
 
 //Models
-const HttpError = require("../models/http-error");
+const { HttpError, Place } = require("../models");
 
 //Utils
 const { getCoordsForAddress } = require("../utils/location");
@@ -44,29 +44,52 @@ const validationHandler = (req) => {
 };
 
 //Controllers
-const getPlacesById = (req, res, next) => {
+const getPlacesById = async (req, res, next) => {
   //:pid is dynamic param
   const placeId = req.params.pid;
-  const place = DUMMY_PLACES.find((p) => p.id === placeId);
-  if (!place) {
-    const error = new HttpError("No Results found for the places id", 404);
-    // error.code = 404;
-    return next(error); //Sending to global error boundary
 
-    // return res.status(404).json({ message: "No Results found" });
+  let place;
+  try {
+    place = await Place.findById(placeId);
+    place = place.toObject({ getters: true }); //Convery mongoose object to js object and add "id" to it
+
+    if (!place) {
+      const error = new HttpError("No Results found for the places id", 404);
+      return next(error); //Sending to global error boundary
+      // return res.status(404).json({ message: "No Results found" });
+    }
+  } catch (err) {
+    console.log("🚀 --- getPlacesById --- err", err);
+    const error = new HttpError(
+      "Something went wrong while fetching places",
+      422
+    );
+    return next(error);
   }
-  // console.log("[GET]: places-routes");
-  res.json({ message: "GET Success", place });
+
+  res.json({
+    message: "GET Success",
+    place,
+  });
 };
 
-const getPlacesByUserId = (req, res, next) => {
+const getPlacesByUserId = async (req, res, next) => {
   const userId = req.params.uid;
-  const places = DUMMY_PLACES.filter((p) => p.creator === userId);
 
-  if (!places) {
-    // const error = new Error("No Results found for the user Id");
-    // error.code = 404;
-    return next(new HttpError("No Results found for the user Id", 404));
+  let places;
+  try {
+    places = await Place.find({ creator: userId });
+    places = places.map((place) => place.toObject({ getters: true }));
+
+    if (!places || places.length === 0) {
+      return next(new HttpError("No Results found for the user Id", 404));
+    }
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong while fetching places for the user",
+      422
+    );
+    return next(error);
   }
 
   res.json({ message: "GET Success", places });
@@ -89,18 +112,25 @@ const createPlace = async (req, res, next) => {
     return next(new HttpError("Address not found", 422));
   }
 
-  const place = {
-    id: uuid(),
-    title,
-    description,
-    location: coordinates,
-    address,
-    creator,
-  };
+  let createdPlace;
+  try {
+    createdPlace = new Place({
+      title,
+      description,
+      location: coordinates,
+      address,
+      image: "https://miro.medium.com/max/900/1*b0TtGI6gWFLltL1QkRxVdg.png",
+      creator,
+    });
 
-  DUMMY_PLACES.push(place);
+    await createdPlace.save();
+  } catch (err) {
+    console.log("🚀 --- createPlace --- err", err);
+    const error = new HttpError("Error creating a new place, try again", 422);
+    return next(error);
+  }
 
-  res.status(201).json({ message: "POST Success", place });
+  res.status(201).json({ message: "POST Success", place: createdPlace });
 };
 
 const updatePlace = (req, res, next) => {

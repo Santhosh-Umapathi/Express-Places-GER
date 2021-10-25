@@ -1,7 +1,8 @@
 const express = require("express");
+const mongoose = require("mongoose");
 require("dotenv").config();
 //Models
-const HttpError = require("./models/http-error");
+const { HttpError } = require("./models");
 
 //Routes
 const placesRoutes = require("./routes/places-routes");
@@ -11,6 +12,7 @@ const app = express();
 
 const jsonParser = express.json();
 const PORT = 5000;
+const url = `mongodb+srv://${process.env.MONGO_USER_NAME}:${process.env.MONGO_PASSWORD}@playground-cluster.liar9.mongodb.net/${process.env.DATABASE_NAME}?retryWrites=true&w=majority`;
 
 //Parse all JSON
 app.use(jsonParser);
@@ -32,5 +34,18 @@ app.use((error, req, res, next) => {
   res.json({ message: error.message || "Unknown error occured" });
 });
 
-app.listen(PORT);
-console.log("Listening to PORT:", PORT);
+//Initialize DB connection
+mongoose
+  .connect(url)
+  .then(() => {
+    console.log("[SUCCESS]: Connected to Database:", process.env.DATABASE_NAME);
+    app.listen(PORT);
+    console.log("[SUCCESS]: Listening to PORT:", PORT);
+  })
+  .catch((err) =>
+    console.log(
+      "[ERROR]: Connecting to Database:",
+      process.env.DATABASE_NAME,
+      err
+    )
+  );
