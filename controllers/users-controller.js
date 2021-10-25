@@ -25,8 +25,22 @@ const validationHandler = (req, next) => {
   return error;
 };
 
-const getUsers = (req, res, next) => {
-  res.json({ message: "GET Success", users: DUMMY_USERS });
+const getUsers = async (req, res, next) => {
+  let users;
+  try {
+    users = await User.find({}, "-password");
+    if (!users || users.length === 0) {
+      const error = new HttpError("No Users found", 422);
+      return next(error);
+    }
+
+    users = users.map((user) => user.toObject({ getters: true }));
+  } catch (err) {
+    const error = new HttpError("Failed to fetch users", 422);
+    return next(error);
+  }
+
+  res.json({ message: "GET Success", users });
 };
 
 const signUp = async (req, res, next) => {
