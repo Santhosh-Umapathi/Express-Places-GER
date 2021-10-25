@@ -66,12 +66,30 @@ const getPlacesById = async (req, res, next) => {
 const getPlacesByUserId = async (req, res, next) => {
   const userId = req.params.uid;
 
-  let places;
-  try {
-    places = await Place.find({ creator: userId });
-    places = places.map((place) => place.toObject({ getters: true }));
+  // let places;
+  // try {
+  //   places = await Place.find({ creator: userId });
+  //   places = places.map((place) => place.toObject({ getters: true }));
 
-    if (!places || places.length === 0) {
+  //   if (!places || places.length === 0) {
+  //     return next(new HttpError("No Results found for the user Id", 404));
+  //   }
+  // } catch (err) {
+  //   const error = new HttpError(
+  //     "Something went wrong while fetching places for the user",
+  //     422
+  //   );
+  //   return next(error);
+  // }
+
+  // res.json({ message: "GET Success", places });
+
+  //Alternative approach with populate
+  let userWithPlaces;
+  try {
+    userWithPlaces = await User.findById(userId).populate("places");
+
+    if (!userWithPlaces || userWithPlaces.places.length === 0) {
       return next(new HttpError("No Results found for the user Id", 404));
     }
   } catch (err) {
@@ -81,6 +99,10 @@ const getPlacesByUserId = async (req, res, next) => {
     );
     return next(error);
   }
+
+  const places = userWithPlaces.places.map((place) =>
+    place.toObject({ getters: true })
+  );
 
   res.json({ message: "GET Success", places });
 };
