@@ -1,4 +1,6 @@
 const { check, validationResult } = require("express-validator");
+const bcryptjs = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 //Models
 const { HttpError, User } = require("../models");
@@ -63,11 +65,36 @@ const signUp = async (req, res, next) => {
     return next(error);
   }
 
+  //Password hashing
+  let hashedPassword;
+  try {
+    hashedPassword = await bcryptjs.hash(password, 12);
+  } catch (err) {
+    const error = new HttpError("Password Hashing failed", 422);
+    return next(error);
+  }
+
+  //JWT Token Generation
+  let token;
+  try {
+    token = await jwt.sign(
+      {
+        userId: newUser.id,
+        email: newUser.email,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+  } catch (err) {
+    const error = new HttpError("Token Generation failed", 422);
+    return next(error);
+  }
+
   try {
     newUser = new User({
       name,
       email,
-      password,
+      password: hashedPassword,
       places: [],
       image: process.env.BACKEND_URL + req.file.path,
     });
@@ -79,7 +106,14 @@ const signUp = async (req, res, next) => {
     return next(error);
   }
 
-  res.status(201).json({ message: "Signup Success", newUser });
+  res.status(201).json({
+    message: "Signup Success",
+    user: {
+      name: newUser.name,
+      email: newUser.email,
+      token,
+    },
+  });
 };
 
 const login = async (req, res, next) => {
@@ -102,7 +136,38 @@ const login = async (req, res, next) => {
     return next(error);
   }
 
-  res.status(201).json({ message: "POST Success: Logged In" });
+  let isValidPassword = false;
+  try {
+    isValidPassword = await bcryptjs.compare(password, user.password);
+  } catch (err) {
+    const error = new HttpError("Password Hashing failed", 401);
+    return next(error);
+  }
+
+  if (!isValidPassword) {
+    const error = new HttpError("Password is incorrect", 401);
+    return next(error);
+  }
+
+  //JWT Token Generation
+  let token;
+  try {
+    token = await jwt.sign(
+      {
+        userId: user.id,
+        email: user.email,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+  } catch (err) {
+    const error = new HttpError("Token Generation failed", 422);
+    return next(error);
+  }
+
+  res
+    .status(201)
+    .json({ message: "Logged In", userId: user.id, email: user.email, token });
 };
 
 //Module const exports
