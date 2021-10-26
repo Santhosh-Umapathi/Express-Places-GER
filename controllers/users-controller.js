@@ -74,22 +74,6 @@ const signUp = async (req, res, next) => {
     return next(error);
   }
 
-  //JWT Token Generation
-  let token;
-  try {
-    token = await jwt.sign(
-      {
-        userId: newUser.id,
-        email: newUser.email,
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" }
-    );
-  } catch (err) {
-    const error = new HttpError("Token Generation failed", 422);
-    return next(error);
-  }
-
   try {
     newUser = new User({
       name,
@@ -103,6 +87,22 @@ const signUp = async (req, res, next) => {
     newUser = newUser.toObject({ getters: true });
   } catch (err) {
     const error = new HttpError("Signup failed", 401);
+    return next(error);
+  }
+
+  //JWT Token Generation
+  let token;
+  try {
+    token = await jwt.sign(
+      {
+        userId: newUser.id,
+        email: newUser.email,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+  } catch (err) {
+    const error = new HttpError("Token Generation failed", 422);
     return next(error);
   }
 
@@ -127,7 +127,7 @@ const login = async (req, res, next) => {
   try {
     user = await User.findOne({ email });
 
-    if (!user || user.password !== password) {
+    if (!user) {
       const error = new HttpError("Invalid Credentials or User not found", 401);
       return next(error);
     }

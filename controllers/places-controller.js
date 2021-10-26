@@ -192,6 +192,15 @@ const updatePlace = async (req, res, next) => {
     return next(error);
   }
 
+  //Auth check
+  if (place.creator.toString() !== req.userData.userId) {
+    const error = new HttpError(
+      "Unauthorized: Not the creator of the place",
+      401
+    );
+    return next(error);
+  }
+
   try {
     await place.save();
     place = place.toObject({ getters: true }); //Convert mongoose object to js object and add "id" to it
@@ -226,6 +235,15 @@ const deletePlace = async (req, res, next) => {
 
   let image = place.image.split(process.env.BACKEND_URL).pop();
 
+  //Auth check
+  if (place.creator.id !== req.userData.userId) {
+    const error = new HttpError(
+      "Unauthorized: Not the creator of the place",
+      401
+    );
+    return next(error);
+  }
+
   try {
     const session = await mongoose.startSession();
     await session.startTransaction();
@@ -242,7 +260,7 @@ const deletePlace = async (req, res, next) => {
   }
 
   //Deleting Image from the server
-  fs.unlink(image, (err) => console.log("Image Deletion failed"));
+  fs.unlink(image, (err) => err && console.log("Image Deletion failed"));
 
   res.status(201).json({ message: "DELETE Success" });
 };

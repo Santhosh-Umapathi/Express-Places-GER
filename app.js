@@ -51,7 +51,9 @@ app.use((error, req, res, next) => {
   //Removing image from storage if its request failed on other fields
   if (req.file) {
     fs.unlink(req.file.path, (err) => {
-      console.log("Unlinking image failed", err);
+      if (err) {
+        console.log("Unlinking image failed", err);
+      }
     });
   }
 
