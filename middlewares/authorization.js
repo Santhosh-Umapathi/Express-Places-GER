@@ -2,12 +2,11 @@ const { HttpError } = require("../models");
 const jwt = require("jsonwebtoken");
 
 const authorization = (req, res, next) => {
+  //Allows the initial preflight requests
+  if (req.method === "OPTIONS") {
+    return next();
+  }
   try {
-    //Allows the initial preflight requests
-    if (req.method === "OPTIONS") {
-      return next();
-    }
-
     const token = req.headers.authorization.split(" ")[1]; //token sent in headers, 'Bearer xxx'
 
     if (!token) {
@@ -19,6 +18,7 @@ const authorization = (req, res, next) => {
     req.userData = { userId: decodedToken.userId };
     next();
   } catch (err) {
+    console.log("🚀 --- authorization --- err", err);
     const error = new HttpError("Authentication failed", 401);
     return next(error);
   }
