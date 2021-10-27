@@ -14,7 +14,7 @@ const userRoutes = require("./routes/users-routes");
 const app = express();
 
 const jsonParser = express.json();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 const url = `mongodb+srv://${process.env.MONGO_USER_NAME}:${process.env.MONGO_PASSWORD}@playground-cluster.liar9.mongodb.net/${process.env.DATABASE_NAME}?retryWrites=true&w=majority`;
 
 //Parse all JSON
