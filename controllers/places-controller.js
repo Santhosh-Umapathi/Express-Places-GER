@@ -113,7 +113,7 @@ const createPlace = async (req, res, next) => {
   const error = validationHandler(req);
   error && next(error);
 
-  const { title, description, address, creator } = req.body;
+  const { title, description, address } = req.body;
 
   let coordinates = {};
   try {
@@ -129,7 +129,7 @@ const createPlace = async (req, res, next) => {
   //Check if user exists
   let user;
   try {
-    user = await User.findById(creator);
+    user = await User.findById(req.userData.userId);
 
     if (!user) {
       const error = new HttpError("User not found", 422);
@@ -148,7 +148,7 @@ const createPlace = async (req, res, next) => {
       location: coordinates,
       address,
       image: process.env.BACKEND_URL + req.file.path,
-      creator, //: user.id,
+      creator: req.userData.userId, //: user.id,
     });
 
     //Multiple transactions, Success only if all completes or reverts back.
