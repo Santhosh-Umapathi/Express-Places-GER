@@ -20,7 +20,7 @@ const url = `mongodb+srv://${process.env.MONGO_USER_NAME}:${process.env.MONGO_PA
 //Parse all JSON
 app.use(jsonParser);
 
-//Allowing CORS for localhost development
+//Allowing CORS - Can comment if served on same server
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*"); //'*' is any domain or 'http://localhost:3000'
   res.setHeader(
@@ -34,6 +34,8 @@ app.use((req, res, next) => {
 
 //Allowing Static files exports - Images
 app.use("/uploads/images", express.static(path.join("uploads", "images")));
+//Allowing Frontend on Same Server
+// app.use(express.static(path.join("public")));
 
 //Places Routes
 app.use("/api/places", placesRoutes);
@@ -42,8 +44,12 @@ app.use("/api/users", userRoutes);
 
 //Unsupported Routes
 app.use((req, res, next) => {
+  //Can comment if Frontend on same server
   const error = new HttpError("Route not found", 404);
   throw error;
+
+  //If frontend is served on same server
+  // res.sendFile(path.resolve(__dirname, "public", "index.html"));
 });
 
 //Error Boundary
